@@ -1,33 +1,77 @@
-import streamlit as st
-from src.utils import initialize_project
+import pandas as pd
+import requests
+from io import StringIO
+import os
+from datetime import datetime, timedelta
 
-# 1. Setup Page Configuration
-st.set_page_config(
-    page_title="IESO Financial Digital Twin",
-    page_icon="⚡",
-    layout="wide"
-)
+def fetch_ieso_data(year_month):
+    """
+    Fetches the Day-Ahead Hourly Energy LMP for a specific month by aggregating daily reports.
+    year_month: string in 'YYYYMM' format.
+    """
+    base_url = "https://reports-public.ieso.ca/public/DAHourlyEnergyLMP/PUB_DAHourlyEnergyLMP_{date}.csv"
+    
+    # Calculate start and end date for the month
+    try:
+        start_date = datetime.strptime(year_month, "%Y%m")
+        if start_date.month == 12:
+            end_date = datetime(start_date.year + 1, 1, 1)
+        else:
+            end_date = datetime(start_date.year, start_date.month + 1, 1)
+    except Exception as e:
+        return f"Error parsing month: {e}"
 
-# 2. Run the Initialization Helper
-# This creates your /data and /logs folders automatically
-initialize_project()
+    all_frames = []
+    current_date = start_date
+    
+    while current_date < end_date:
+        date_str = current_date.strftime("%Y%m%d")
+        url = base_url.format(date=date_str)
+        
+        try:
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                # The CSV has 1 row of metadata before the header
+                df_day = pd.read_csv(StringIO(response.text), skiprows=1)
+                
+                # Filter for the Ontario Zonal Price
+                df_zonal = df_day[df_day['Pricing Location'] == 'ONTARIO_ZONAL_PRICE'].copy()
+                
+                if not df_zonal.empty:
+                    # Add a proper timestamp column
+                    df_zonal['Date'] = current_date.strftime("%Y-%m-%d")
+                    all_frames.append(df_zonal)
+            else:
+                # Some days might be missing if they are in the future or not yet published
+                pass
+        except Exception:
+            # Skip failed days but log if necessary
+            pass
+            
+        current_date += timedelta(days=1)
 
-# 3. Landing Page UI
-st.title("Welcome to the IESO Energy Hedging Tool")
-st.markdown("---")
+    if not all_frames:
+        return f"Error: No data found for {year_month} in the Day-Ahead LMP reports."
 
-st.markdown("""
-### **Project Purpose**
-This tool acts as a **Financial Digital Twin** for Ontario industrial energy consumers. It allows you to:
-*   **Ingest Data:** Scrape real-time and historical price data from the IESO.
-*   **Simulate Risk:** Use the **Ornstein-Uhlenbeck** model to forecast price volatility.
-*   **Strategy Design:** Price Energy Caps and Collars using Black-Scholes to protect your budget.
+    # Combine all days
+    full_df = pd.concat(all_frames, ignore_index=True)
+    
+    # Standardize column names for the app logic
+    full_df = full_df.rename(columns={'LMP': 'Ontario Price', 'Delivery Hour': 'Hour'})
+    
+    # Create a proper Timestamp column
+    # Hour in IESO is 1-24. We convert to 0-23 for pandas to_datetime
+    full_df['Timestamp'] = pd.to_datetime(full_df['Date']) + pd.to_timedelta(full_df['Hour'] - 1, unit='h')
+    
+    # Sort by Timestamp
+    full_df = full_df.sort_values('Timestamp')
+    
+    return full_df
 
-### **How to Get Started**
-Use the sidebar on the left to navigate through the project phases:
-1.  **Market Data:** Fetch and clean the latest IESO CSV reports.
-2.  **Simulations:** Run Monte Carlo paths to see potential future costs.
-3.  **Hedging Strategy:** Calculate premiums and visualize your "Hedged vs. Unhedged" payoff.
-""")
+def save_raw_data(df, year_month):
+    """Saves the dataframe to the data/raw directory."""
+    file_path = f"data/raw/ieso_prices_{year_month}.csv"
+    df.to_csv(file_path, index=False)
+    return file_path
 
-st.sidebar.info("Select a module above to begin.")
+import random

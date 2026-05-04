@@ -10,4 +10,4 @@ python-dotenv       # Securely manages local file paths or API keys
 
 # Financial Math & Simulations
 scipy               # Provides 'norm' for Black-Scholes and optimization tools
-# mibian            # Optional: A specialized library for options pricing
+mibian            # Optional: A specialized library for options pricing
