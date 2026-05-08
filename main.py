@@ -35,6 +35,7 @@ pages = {
     "Overview": [
         st.Page(show_landing_page, title="Home", icon="🏠"),
         st.Page("pages/0_project_charter.py", title="Project Charter", icon="📜"),
+        st.Page("pages/4_value_chain.py", title="Energy Value Chain", icon="⚡"),
     ],
     "Tools": [
         st.Page("pages/1_market_data.py", title="Market Data", icon="📊"),
