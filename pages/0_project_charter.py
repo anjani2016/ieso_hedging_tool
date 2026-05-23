@@ -56,7 +56,21 @@ html_content = """
     <h2>3. Stakeholders</h2>
     <p><strong>Project Sponsor:</strong> Centauri Research | <strong>Primary Users:</strong> CFOs, Energy Managers | <strong>Data:</strong> IESO Public Reports & API</p>
 
-    <h2>4. Project Milestones (2026)</h2>
+
+    <h2>4. Mathematical Modelling</h2>
+    <p> The simulation engine uses an Ornstein–Uhlenbeck (OU) mean‑reverting stochastic model to represent electricity prices, 
+    which naturally spike during grid stress and revert toward structural equilibrium.
+      The OU process captures three core dynamics:
+    </p>
+    <ul>
+        <li><strong>Long-term Mean (μ):</strong> The system's equilibrium HOEP level.</li>
+        <li><strong>Reversion Speed (θ):</strong> How quickly prices snap back after volatility events.</li>
+        <li><strong>Volatility (σ):</strong> The magnitude of weather‑ and congestion‑driven shocks.</li>
+    </ul>
+    <p>This mean‑reverting framework ensures the tool reflects physical grid behavior, not equity‑style upward drift, 
+    and provides a realistic foundation for hedge valuation, Greeks analysis, and Monte Carlo risk scenarios.</p>
+
+    <h2>5. Project Milestones (2026)</h2>
     <table class="status-table">
         <thead>
             <tr><th>Phase</th><th>Status</th><th>Target Date</th></tr>
@@ -69,7 +83,7 @@ html_content = """
         </tbody>
     </table>
 
-    <!-- SECTION 5: THE MISSING LINKS -->
+    <!-- SECTION 6: THE MISSING LINKS -->
     <div class="error-panel">
         <h3>5. Strategic Vulnerabilities (Missing Logic Links)</h3>
         <p>Current analysis is <strong>non-predictive</strong> and prone to error due to the absence of the following critical physical-financial links:</p>
